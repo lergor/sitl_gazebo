@@ -268,7 +268,7 @@ void GazeboMavlinkInterface::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf
   vision_sub_ = node_handle_->Subscribe("~/" + model_->GetName() + vision_sub_topic_, &GazeboMavlinkInterface::VisionCallback, this);
   mag_sub_ = node_handle_->Subscribe("~/" + model_->GetName() + mag_sub_topic_, &GazeboMavlinkInterface::MagnetometerCallback, this);
   baro_sub_ = node_handle_->Subscribe("~/" + model_->GetName() + baro_sub_topic_, &GazeboMavlinkInterface::BarometerCallback, this);
-
+  control_panel_sub_ = node_handle_->Subscribe("~/" + emergency_signal_sub_topic_, &GazeboMavlinkInterface::EmergencySignalCallback, this);
   // Publish gazebo's motor_speed message
   motor_velocity_reference_pub_ = node_handle_->Advertise<mav_msgs::msgs::CommandMotorSpeed>("~/" + model_->GetName() + motor_velocity_reference_pub_topic_, 1);
 
@@ -702,6 +702,7 @@ void GazeboMavlinkInterface::SendSensorMessages()
   hil_state_quat.xacc = accel_true_b.X() * 1000;
   hil_state_quat.yacc = accel_true_b.Y() * 1000;
   hil_state_quat.zacc = accel_true_b.Z() * 1000;
+  hil_state_quat.emergency_type = state_;
 
   if (!hil_mode_ || (hil_mode_ && hil_state_level_)) {
     mavlink_message_t msg;
@@ -1214,6 +1215,11 @@ void GazeboMavlinkInterface::do_write(bool check_tx_state){
       tx_in_progress = false;
     }
   });
+}
+
+void GazeboMavlinkInterface::EmergencySignalCallback(
+        const boost::shared_ptr<const control_panel_msgs::msgs::ControlPanelMessage> &emergency_msg) {
+    state_ = emergency_msg->situation();
 }
 
 }

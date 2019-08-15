@@ -33,6 +33,9 @@ void GazeboMotorModel::InitializeParams() {}
 
 void GazeboMotorModel::Publish() {
   turning_velocity_msg_.set_data(joint_->GetVelocity(0));
+  if(state_ != RUNNING) {
+      turning_velocity_msg_.set_data(0);
+  }
   motor_velocity_pub_->Publish(turning_velocity_msg_);
 }
 
@@ -148,7 +151,7 @@ void GazeboMotorModel::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf) {
   //std::cout << "[gazebo_motor_model]: Subscribe to gz topic: "<< motor_failure_sub_topic_ << std::endl;
   motor_failure_sub_ = node_handle_->Subscribe<msgs::Int>(motor_failure_sub_topic_, &GazeboMotorModel::MotorFailureCallback, this);
   motor_velocity_pub_ = node_handle_->Advertise<std_msgs::msgs::Float>("~/" + model_->GetName() + motor_speed_pub_topic_, 1);
-
+  emergency_signal_sub_ = node_handle_->Subscribe<control_panel_msgs::msgs::ControlPanelMessage>("~/" + emergency_signal_sub_topic_, &GazeboMotorModel::EmergencySignalCallback, this);
   // Create the first order filter.
   rotor_velocity_filter_.reset(new FirstOrderFilter<double>(time_constant_up_, time_constant_down_, ref_motor_rot_vel_));
 }
@@ -169,8 +172,12 @@ void GazeboMotorModel::testProto(MotorSpeedPtr &msg) {
 void GazeboMotorModel::OnUpdate(const common::UpdateInfo& _info) {
   sampling_time_ = _info.simTime.Double() - prev_sim_time_;
   prev_sim_time_ = _info.simTime.Double();
-  UpdateForcesAndMoments();
-  UpdateMotorFail();
+  if (state_ == RUNNING) {
+      UpdateForcesAndMoments();
+      UpdateMotorFail();
+  } else {
+      joint_->SetVelocity(0, 0);
+  }
   Publish();
 }
 
@@ -270,6 +277,10 @@ void GazeboMotorModel::UpdateForcesAndMoments() {
 }
 
 void GazeboMotorModel::UpdateMotorFail() {
+    if (state_ != RUNNING) {
+        joint_->SetVelocity(0, 0);
+        return;
+    }
   if (motor_number_ == motor_Failure_Number_ - 1){
     // motor_constant_ = 0.0;
     joint_->SetVelocity(0,0);
@@ -286,6 +297,30 @@ void GazeboMotorModel::UpdateMotorFail() {
        screen_msg_flag = 1;
      }
   }
+}
+
+void GazeboMotorModel::EmergencySignalCallback(
+    const boost::shared_ptr<const control_panel_msgs::msgs::ControlPanelMessage> &emergency_msg) {
+    switch (emergency_msg->situation()) {
+        case NO_BROKEN_ROTORS:
+            state_ = RUNNING;
+            break;
+        case ONE_BROKEN_ROTOR:
+            if (motor_number_ == 0) {
+//                state_ = STOPPED; // not supported
+                gzmsg << "Motor number [0] stopped!" << std::endl;
+            }
+            break;
+        case TWO_BROKEN_ROTORS: {
+            if (motor_number_ == 2 || motor_number_ == 3) {
+                state_ = STOPPED;
+                gzmsg << "Motor number [" << motor_number_ << "] stopped!" << std::endl;
+            }
+            break;
+        }
+        default:
+            break;
+    }
 }
 
 GZ_REGISTER_MODEL_PLUGIN(GazeboMotorModel);

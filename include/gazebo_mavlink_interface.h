@@ -66,6 +66,7 @@
 #include <Odometry.pb.h>
 #include <MagneticField.pb.h>
 #include <Pressure.pb.h>
+#include <ControlPanelMessage.pb.h>
 
 #include <mavlink/v2.0/common/mavlink.h>
 #include "msgbuffer.h"
@@ -73,6 +74,7 @@
 static const uint32_t kDefaultMavlinkUdpPort = 14560;
 static const uint32_t kDefaultMavlinkTcpPort = 4560;
 static const uint32_t kDefaultQGCUdpPort = 14550;
+static const uint32_t kDefaultSDKUdpPort = 14540;
 
 using lock_guard = std::lock_guard<std::recursive_mutex>;
 static constexpr auto kDefaultDevice = "/dev/ttyACM0";
@@ -95,7 +97,7 @@ typedef const boost::shared_ptr<const sensor_msgs::msgs::Range> LidarPtr;
 typedef const boost::shared_ptr<const sensor_msgs::msgs::SITLGps> GpsPtr;
 typedef const boost::shared_ptr<const sensor_msgs::msgs::MagneticField> MagnetometerPtr;
 typedef const boost::shared_ptr<const sensor_msgs::msgs::Pressure> BarometerPtr;
-
+typedef const boost::shared_ptr<const control_panel_msgs::msgs::ControlPanelMessage> EmergencyStatePtr;
 // Default values
 static const std::string kDefaultNamespace = "";
 
@@ -112,6 +114,7 @@ static const std::string kDefaultGPSTopic = "/gps";
 static const std::string kDefaultVisionTopic = "/vision_odom";
 static const std::string kDefaultMagTopic = "/mag";
 static const std::string kDefaultBarometerTopic = "/baro";
+static const std::string kDefaultEmergencySubTopic = "/control_panel";
 
 //! Rx packer framing status. (same as @p mavlink::mavlink_framing_t)
 enum class Framing : uint8_t {
@@ -144,6 +147,7 @@ public:
     vision_sub_topic_(kDefaultVisionTopic),
     mag_sub_topic_(kDefaultMagTopic),
     baro_sub_topic_(kDefaultBarometerTopic),
+    emergency_signal_sub_topic_(kDefaultEmergencySubTopic),
     model_ {},
     world_(nullptr),
     left_elevon_joint_(nullptr),
@@ -176,7 +180,8 @@ public:
     device_(kDefaultDevice),
     baudrate_(kDefaultBaudRate),
     hil_mode_(false),
-    hil_state_level_(false)
+    hil_state_level_(false),
+    state_(NO_BROKEN_ROTORS)
     {}
 
   ~GazeboMavlinkInterface();
@@ -249,6 +254,7 @@ private:
   void SendSensorMessages();
   void handle_control(double _dt);
   bool IsRunning();
+  void EmergencySignalCallback(const boost::shared_ptr<const control_panel_msgs::msgs::ControlPanelMessage> &emergency_msg);
 
   // Serial interface
   void open();
@@ -281,6 +287,7 @@ private:
   transport::SubscriberPtr vision_sub_;
   transport::SubscriberPtr mag_sub_;
   transport::SubscriberPtr baro_sub_;
+  transport::SubscriberPtr control_panel_sub_;
 
   std::string imu_sub_topic_;
   std::string lidar_sub_topic_;
@@ -292,6 +299,7 @@ private:
   std::string vision_sub_topic_;
   std::string mag_sub_topic_;
   std::string baro_sub_topic_;
+  std::string emergency_signal_sub_topic_;
 
   std::mutex last_imu_message_mutex_ {};
   std::condition_variable last_imu_message_cond_ {};
@@ -357,5 +365,6 @@ private:
 
   bool hil_mode_;
   bool hil_state_level_;
+  int state_;
 };
 }

@@ -5,12 +5,12 @@
       <pose>0 0 0 0 0 0</pose>
       <inertial>
         <pose>0 0 0 0 0 0</pose>
-        <mass>1.47</mass>
+        <mass>0.5</mass>
         <inertia>
           <ixx>0.011</ixx>
           <ixy>0</ixy>
           <ixz>0</ixz>
-          <iyy>0.015</iyy>
+          <iyy>0.011</iyy>
           <iyz>0</iyz>
           <izz>0.021</izz>
         </inertia>
@@ -498,12 +498,12 @@
       <robotNamespace></robotNamespace>
       <linkName>imu_link</linkName>
       <imuTopic>/imu</imuTopic>
-      <gyroscopeNoiseDensity>0.0003394</gyroscopeNoiseDensity>
-      <gyroscopeRandomWalk>3.8785e-05</gyroscopeRandomWalk>
+      <gyroscopeNoiseDensity>0.000003394</gyroscopeNoiseDensity>
+      <gyroscopeRandomWalk>3.8785e-06</gyroscopeRandomWalk>
       <gyroscopeBiasCorrelationTime>1000.0</gyroscopeBiasCorrelationTime>
       <gyroscopeTurnOnBiasSigma>0.0087</gyroscopeTurnOnBiasSigma>
-      <accelerometerNoiseDensity>0.004</accelerometerNoiseDensity>
-      <accelerometerRandomWalk>0.006</accelerometerRandomWalk>
+      <accelerometerNoiseDensity>0.00004</accelerometerNoiseDensity>
+      <accelerometerRandomWalk>0.00006</accelerometerRandomWalk>
       <accelerometerBiasCorrelationTime>300.0</accelerometerBiasCorrelationTime>
       <accelerometerTurnOnBiasSigma>0.196</accelerometerTurnOnBiasSigma>
     </plugin>

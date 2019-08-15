@@ -1,0 +1,7 @@
+syntax = "proto2";
+package control_panel_msgs.msgs;
+
+message ControlPanelMessage
+{
+  required int32 situation = 1 [default = 1];
+}

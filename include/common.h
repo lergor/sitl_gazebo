@@ -230,4 +230,12 @@ static const auto q_ng = ignition::math::Quaterniond(0, 0.70711, 0.70711, 0);
  */
 static const auto q_br = ignition::math::Quaterniond(0, 1, 0, 0);
 
+
+enum emergency_type {
+    NO_BROKEN_ROTORS = 0,
+    ONE_BROKEN_ROTOR = 1,
+    TWO_BROKEN_ROTORS = 2,
+    THREE_BROKEN_ROTORS = 3
+};
+
 #endif  // SITL_GAZEBO_COMMON_H_

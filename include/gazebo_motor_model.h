@@ -34,6 +34,7 @@
 #include "gazebo/msgs/msgs.hh"
 #include "MotorSpeed.pb.h"
 #include "Float.pb.h"
+#include "ControlPanelMessage.pb.h"
 
 #include "common.h"
 
@@ -43,14 +44,20 @@ const static int CCW = 1;
 const static int CW = -1;
 }
 
+enum motor_state {
+    BROKEN, STOPPED, RUNNING
+};
+
 namespace gazebo {
 // Default values
 static const std::string kDefaultNamespace = "";
 static const std::string kDefaultCommandSubTopic = "/gazebo/command/motor_speed";
 static const std::string kDefaultMotorFailureNumSubTopic = "/gazebo/motor_failure_num";
 static const std::string kDefaultMotorVelocityPubTopic = "/motor_speed";
+static const std::string kDefaultEmergencySubTopic = "/control_panel";
 
 typedef const boost::shared_ptr<const mav_msgs::msgs::CommandMotorSpeed> CommandMotorSpeedPtr;
+typedef const boost::shared_ptr<const control_panel_msgs::msgs::ControlPanelMessage> ControlPanelMessagePtr;
 
 /*
 // Protobuf test
@@ -77,6 +84,7 @@ class GazeboMotorModel : public MotorModel, public ModelPlugin {
         command_sub_topic_(kDefaultCommandSubTopic),
         motor_failure_sub_topic_(kDefaultMotorFailureNumSubTopic),
         motor_speed_pub_topic_(kDefaultMotorVelocityPubTopic),
+        emergency_signal_sub_topic_(kDefaultEmergencySubTopic),
         motor_number_(0),
         motor_Failure_Number_(0),
         turning_direction_(turning_direction::CW),
@@ -90,8 +98,8 @@ class GazeboMotorModel : public MotorModel, public ModelPlugin {
         rotor_drag_coefficient_(kDefaultRotorDragCoefficient),
         rotor_velocity_slowdown_sim_(kDefaultRotorVelocitySlowdownSim),
         time_constant_down_(kDefaultTimeConstantDown),
-        time_constant_up_(kDefaultTimeConstantUp) {
-  }
+        time_constant_up_(kDefaultTimeConstantUp),
+        state_(RUNNING) {}
 
   virtual ~GazeboMotorModel();
 
@@ -113,9 +121,11 @@ class GazeboMotorModel : public MotorModel, public ModelPlugin {
   std::string link_name_;
   std::string motor_speed_pub_topic_;
   std::string namespace_;
+  std::string emergency_signal_sub_topic_;
 
   int motor_number_;
   int turning_direction_;
+  motor_state state_;
 
   int motor_Failure_Number_; /*!< motor_Failure_Number is (motor_number_ + 1) as (0) is considered no_fail. Publish accordingly */
   int tmp_motor_num; // A temporary variable used to print msg
@@ -137,6 +147,7 @@ class GazeboMotorModel : public MotorModel, public ModelPlugin {
   transport::PublisherPtr motor_velocity_pub_;
   transport::SubscriberPtr command_sub_;
   transport::SubscriberPtr motor_failure_sub_; /*!< Subscribing to motor_failure_sub_topic_; receiving motor number to fail, as an integer */
+  transport::SubscriberPtr emergency_signal_sub_;
 
   physics::ModelPtr model_;
   physics::JointPtr joint_;
@@ -152,6 +163,9 @@ class GazeboMotorModel : public MotorModel, public ModelPlugin {
   void VelocityCallback(CommandMotorSpeedPtr &rot_velocities);
   void MotorFailureCallback(const boost::shared_ptr<const msgs::Int> &fail_msg);  /*!< Callback for the motor_failure_sub_ subscriber */
   std::unique_ptr<FirstOrderFilter<double>>  rotor_velocity_filter_;
+
+  void EmergencySignalCallback(const boost::shared_ptr<const control_panel_msgs::msgs::ControlPanelMessage> &emergency_msg);
+
 /*
   // Protobuf test
   std::string motor_test_sub_topic_;
