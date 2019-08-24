@@ -38,15 +38,15 @@
     </physics>
     <gui fullscreen='0'>
       <camera name='user_camera'>
-        <pose>-0 0 10 0 1.5 0</pose>
-        <view_controller>orbit</view_controller>
-        <projection_type>perspective</projection_type>
-        <!--
-        <track_visual>
-          <name>solo</name>
-          <use_model_frame>1</use_model_frame>
-        </track_visual>
-        -->
+            <pose frame=''>-9.453 2.78128 4.02096 0 0.268 -0.307998</pose>
+            <view_controller>orbit</view_controller>
+            <projection_type>perspective</projection_type>
+            <!--
+            <track_visual>
+              <name>solo</name>
+              <use_model_frame>1</use_model_frame>
+            </track_visual>
+            -->
       </camera>
       <plugin name="control_panel" filename="/home/lergor/CLionProjects/control_panel/build/libgui_control_panel.so"/>
     </gui>
